@@ -1,0 +1,26 @@
+* {
+    padding: 0;
+    margin: 0;
+}
+
+body {
+    width: 300px;
+}
+.seek {
+    width: 100%
+}
+.volume {
+    width: 40%
+}
+.card {
+    border: solid 2px #fafafa;
+    margin: 14px;
+    padding: 4px
+}
+.card:hover {
+    border: solid 2px #9ea72c;
+}
+.control-btn {
+    width: 20px;
+    margin: 2px;
+}
