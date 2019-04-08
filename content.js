@@ -27,6 +27,13 @@ window.onload = function() {
         throw new Error("seeked range unavalible");
       }
     }
+    function setVolume(num) {
+      if (num >= 0 && num <= 100) {
+        vi.volume = num / 100;
+      } else {
+        throw new Error("invalid volume value");
+      }
+    }
     function getVolume() {
       return vi.volume;
     }
@@ -43,6 +50,7 @@ window.onload = function() {
       seekTo: seekTo,
       getTimer: getTimer,
       getVolume: getVolume,
+      setVolume: setVolume,
       getDuration: getDuration
     };
   })();
@@ -59,6 +67,12 @@ window.onload = function() {
   function messageHendler(msg, sender, sendRespnce) {
     if (msg.command === "play") {
       window.yControlPanel.play();
+    } else if (msg.command === "pause") {
+      window.yControlPanel.pause();
+    } else if (msg.command === "seekTo") {
+      window.yControlPanel.seekTo(msg.value);
+    } else if (msg.command === "setVolume") {
+      window.yControlPanel.setVolume(msg.value);
     }
   }
   updater(vi, function(data) {
@@ -69,7 +83,7 @@ function updater(video, cB) {
   const updateMsg = {
     type: "update",
     state: null,
-    volume: null,
+    volume: yControlPanel.getVolume(),
     currentTime: null,
     timer: []
   };
@@ -82,6 +96,8 @@ function updater(video, cB) {
     updateMsg.currentTime = e.target.currentTime;
   });
   video.addEventListener("volumechange", function name(e) {
+    console.log("volumechange", e.target.volume);
+
     updateMsg.volume = e.target.volume;
   });
   video.addEventListener("play", function name(e) {

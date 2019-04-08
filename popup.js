@@ -1,4 +1,29 @@
 console.log("popup.js");
+function playHandeler(e) {
+  const parent = e.target.parentElement;
+  const tabId = parent.id;
+  chrome.tabs.sendMessage(+tabId, { command: "play" });
+}
+
+function pauseHandeler(e) {
+  const parent = e.target.parentElement;
+  const tabId = parent.id;
+  chrome.tabs.sendMessage(+tabId, { command: "pause" });
+}
+
+function seekHandler(e) {
+  const parent = e.target.parentElement;
+  const tabId = parent.id;
+  const value = e.target.value;
+  chrome.tabs.sendMessage(+tabId, { command: "seekTo", value: +value });
+}
+function volumeHandler(e) {
+  const parent = e.target.parentElement;
+  const tabId = parent.id;
+  const value = e.target.value;
+  chrome.tabs.sendMessage(+tabId, { command: "setVolume", value: +value });
+}
+
 let bgPage = chrome.extension.getBackgroundPage();
 const container = document.querySelector("#card-container");
 const updateRequestSender = setInterval(function() {
@@ -25,7 +50,7 @@ function cardMaker(vdData) {
   });
 
   const title = document.createElement("h3");
-  title.innerText = vdData.title;
+  title.innerText = vdData.title.slice(0, -10);
 
   const seek = document.createElement("input");
   setAttributes(seek, {
@@ -35,6 +60,7 @@ function cardMaker(vdData) {
     type: "range",
     class: "seek"
   });
+  seek.addEventListener("change", seekHandler);
 
   const play = document.createElement("input");
   setAttributes(play, {
@@ -42,6 +68,7 @@ function cardMaker(vdData) {
     value: "|>",
     class: "control-btn play"
   });
+  play.addEventListener("click", playHandeler);
 
   const pause = document.createElement("input");
   setAttributes(pause, {
@@ -49,16 +76,17 @@ function cardMaker(vdData) {
     value: "| |",
     class: "control-btn pause"
   });
+  pause.addEventListener("click", pauseHandeler);
 
   const volume = document.createElement("input");
   setAttributes(volume, {
     min: 0,
     max: 100,
-    value: vdData.volume,
+    value: Math.floor(vdData.volume * 100),
     type: "range",
     class: "volume"
   });
-
+  volume.addEventListener("change", volumeHandler);
   const timer = document.createElement("span");
   timer.innerText = vdData.timer.join("/");
 
