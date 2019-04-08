@@ -45,7 +45,7 @@ bgPage.yCPQueue.forEach(video => {
 function cardMaker(vdData) {
   const card = document.createElement("div");
   setAttributes(card, {
-    className: "card",
+    class: "card",
     id: vdData.tabId
   });
 
