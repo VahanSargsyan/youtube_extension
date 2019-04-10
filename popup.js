@@ -1,4 +1,12 @@
-console.log("popup.js");
+window.yCPQueue = chrome.extension.getBackgroundPage().yCPQueue;
+window.updates = true;
+const container = document.querySelector("#card-container");
+
+function setAttributes(el, attrs) {
+  for (var key in attrs) {
+    el.setAttribute(key, attrs[key]);
+  }
+}
 function playHandeler(e) {
   const parent = e.target.parentElement;
   const tabId = parent.id;
@@ -15,6 +23,8 @@ function seekHandler(e) {
   const parent = e.target.parentElement;
   const tabId = parent.id;
   const value = e.target.value;
+  console.log('===>seeked<===');
+  
   chrome.tabs.sendMessage(+tabId, { command: "seekTo", value: +value });
 }
 function volumeHandler(e) {
@@ -23,26 +33,10 @@ function volumeHandler(e) {
   const value = e.target.value;
   chrome.tabs.sendMessage(+tabId, { command: "setVolume", value: +value });
 }
-
-let bgPage = chrome.extension.getBackgroundPage();
-const container = document.querySelector("#card-container");
-const updateRequestSender = setInterval(function() {
-  console.log("bgPage.haveupdate", bgPage.haveupdate);
-  bgPage = chrome.extension.getBackgroundPage();
-  // if (bgPage.haveupdate) {
-  //   bgPage.haveupdate = false;
-  container.innerHTML = "";
-  bgPage.yCPQueue.forEach(video => {
-    cardMaker(video);
-  });
-  // }
-}, 500);
-
-bgPage.yCPQueue.forEach(video => {
-  cardMaker(video);
-});
-
 function cardMaker(vdData) {
+  if (vdData === null) {
+    return;
+  }
   const card = document.createElement("div");
   setAttributes(card, {
     class: "card",
@@ -99,9 +93,31 @@ function cardMaker(vdData) {
 
   container.appendChild(card);
 }
-
-function setAttributes(el, attrs) {
-  for (var key in attrs) {
-    el.setAttribute(key, attrs[key]);
-  }
+function init() {
+  container.innerHTML = "";
+  yCPQueue.forEach(video => {
+    cardMaker(video);
+  });
 }
+chrome.runtime.onMessage.addListener(function(msg, sender, resp) {
+  if (msg.type === "update") {
+    updates = true;
+    const tabId = sender.tab.id;
+    for (let i = 0; i < yCPQueue.length; i++) {
+      if (yCPQueue[i].tabId == tabId) {
+        yCPQueue[i] = Object.assign(yCPQueue[i], msg);
+        init();
+        break;
+      }
+    }
+  } else if (msg.type === "reInit") {
+    yCPQueue = chrome.extension.getBackgroundPage().yCPQueue;
+    init();
+  }
+});
+init();
+
+
+
+
+

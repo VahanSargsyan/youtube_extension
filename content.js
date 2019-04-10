@@ -55,14 +55,18 @@ window.onload = function() {
     };
   })();
 
-  const videoData = {
-    type: "init",
-    title: title ? title.innerHTML : "some-random song",
-    duration: window.yControlPanel.getDuration(),
-    volume: window.yControlPanel.getVolume()
-  };
-  chrome.runtime.sendMessage(videoData);
-
+  function sendInitMessage() {
+    const videoData = {
+      type: "init",
+      title: title ? title.innerHTML : "some-random song",
+      duration: window.yControlPanel.getDuration(),
+      volume: window.yControlPanel.getVolume(),
+      timer: yControlPanel.getTimer(),
+    };
+    console.log("iniiiit", videoData);
+    chrome.runtime.sendMessage(videoData);
+  }
+  sendInitMessage(),
   chrome.runtime.onMessage.addListener(messageHendler);
   function messageHendler(msg, sender, sendRespnce) {
     if (msg.command === "play") {
@@ -76,6 +80,7 @@ window.onload = function() {
     }
   }
   updater(vi, function(data) {
+    console.log("updater callback", data);
     chrome.runtime.sendMessage(data);
   });
 };
@@ -96,8 +101,6 @@ function updater(video, cB) {
     updateMsg.currentTime = e.target.currentTime;
   });
   video.addEventListener("volumechange", function name(e) {
-    console.log("volumechange", e.target.volume);
-
     updateMsg.volume = e.target.volume;
   });
   video.addEventListener("play", function name(e) {
