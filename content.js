@@ -1,72 +1,79 @@
-console.log("yeeeeehhhh!!!");
 window.onload = function() {
-  const title = document.querySelector("title");
-  const vi = document.querySelector("video");
+  "use strict";
 
-  window.yControlPanel = (function() {
-    const duration = vi.duration;
+  window.yCPTitle = document.querySelector("title");
+  let vi = document.querySelector("video");
+  window.yCP = function(video) {
+    return (function(vi) {
+      let duration = vi.duration;
 
-    function secToMin(sec) {
-      const secs = Math.floor(sec % 60);
-      const mins = Math.floor(sec / 60);
-      return mins + ":" + secs;
-    }
-    function play() {
-      vi.play();
-    }
-    function pause() {
-      vi.pause();
-    }
-    function getMiniPlayer() {
-      return;
-    }
-    function seekTo(sec) {
-      if (sec <= duration && sec >= 0) {
-        vi.currentTime = sec;
-      } else {
-        throw new Error("seeked range unavalible");
+      function secToMin(sec) {
+        const secs = Math.floor(sec % 60);
+        const mins = Math.floor(sec / 60);
+        return mins + ":" + secs;
       }
-    }
-    function setVolume(num) {
-      if (num >= 0 && num <= 100) {
-        vi.volume = num / 100;
-      } else {
-        throw new Error("invalid volume value");
+      function play() {
+        vi.play();
       }
-    }
-    function getVolume() {
-      return vi.volume;
-    }
-    function getDuration() {
-      return duration;
-    }
-    function getTimer() {
-      return [secToMin(vi.currentTime), secToMin(duration)];
-    }
+      function pause() {
+        vi.pause();
+      }
+      function getMiniPlayer() {
+        return;
+      }
+      function seekTo(sec) {
+        if (sec <= duration && sec >= 0) {
+          vi.currentTime = sec;
+        } else {
+          throw new Error("seeked range unavalible");
+        }
+      }
+      function setVolume(num) {
+        if (num >= 0 && num <= 100) {
+          vi.volume = num / 100;
+        } else {
+          throw new Error("invalid volume value");
+        }
+      }
+      function getVolume() {
+        return Math.floor(vi.volume * 100);
+      }
+      function getDuration() {
+        return duration;
+      }
+      function getTimer() {
+        if (duration) {
+          return [secToMin(vi.currentTime), secToMin(duration)];
+        } else {
+          duration = vi.duration;
+          return [secToMin(vi.currentTime), secToMin(vi.duration)];
+        }
+      }
 
-    return {
-      play: play,
-      pause: pause,
-      seekTo: seekTo,
-      getTimer: getTimer,
-      getVolume: getVolume,
-      setVolume: setVolume,
-      getDuration: getDuration
-    };
-  })();
+      return {
+        play: play,
+        pause: pause,
+        seekTo: seekTo,
+        getTimer: getTimer,
+        getVolume: getVolume,
+        setVolume: setVolume,
+        getDuration: getDuration
+      };
+    })(video);
+  };
+  window.yControlPanel = yCP(vi);
 
-  function sendInitMessage() {
+  function sendInitMessage(type) {
     const videoData = {
-      type: "init",
-      title: title ? title.innerHTML : "some-random song",
+      type: type || "init",
+      title: window.yCPTitle ? window.yCPTitle : "some-random song",
       duration: window.yControlPanel.getDuration(),
       volume: window.yControlPanel.getVolume(),
-      timer: yControlPanel.getTimer(),
+      timer: yControlPanel.getTimer()
     };
-    console.log("iniiiit", videoData);
     chrome.runtime.sendMessage(videoData);
   }
-  sendInitMessage(),
+  sendInitMessage("init");
   chrome.runtime.onMessage.addListener(messageHendler);
   function messageHendler(msg, sender, sendRespnce) {
     if (msg.command === "play") {
@@ -80,10 +87,31 @@ window.onload = function() {
     }
   }
   updater(vi, function(data) {
-    console.log("updater callback", data);
     chrome.runtime.sendMessage(data);
   });
+  window.onbeforeunload = function(e) {
+    chrome.runtime.sendMessage({ type: "remove" });
+  };
+
+  window.addEventListener("click", function() {
+    if (window.location.href !== url) {
+      console.log("location changed");
+
+      setTimeout(function() {
+        url = window.location.href;
+        window.yCPTitle = document.querySelector("title");
+        vi = document.querySelector("video");
+        if (vi) {
+          yControlPanel = yCP(vi);
+          sendInitMessage("change");
+        } else {
+          chrome.runtime.sendMessage({ type: "remove" });
+        }
+      }, 2000);
+    }
+  });
 };
+
 function updater(video, cB) {
   const updateMsg = {
     type: "update",
@@ -101,7 +129,7 @@ function updater(video, cB) {
     updateMsg.currentTime = e.target.currentTime;
   });
   video.addEventListener("volumechange", function name(e) {
-    updateMsg.volume = e.target.volume;
+    updateMsg.volume = yControlPanel.getVolume();
   });
   video.addEventListener("play", function name(e) {
     updateMsg.state = "play";
